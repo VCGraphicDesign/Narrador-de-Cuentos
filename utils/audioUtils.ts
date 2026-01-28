@@ -59,7 +59,7 @@ export function pcmToWav(pcmData: Uint8Array, sampleRate: number = 24000): Blob 
 /**
  * Divide un texto largo en trozos más pequeños respetando los puntos y comas.
  */
-export function splitTextIntoChunks(text: string, maxChars: number = 250): string[] {
+export function splitTextIntoChunks(text: string, maxChars: number = 500): string[] {
   const sentences = text.split(/(?<=[.!?])\s+/);
   const chunks: string[] = [];
   let currentChunk = "";

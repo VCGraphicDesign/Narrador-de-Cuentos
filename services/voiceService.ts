@@ -51,10 +51,14 @@ export async function generateExternalTTS(
     // Nota: El orden de los parámetros depende del Space de Gradio.
     // Para Qwen3-TTS suele ser: text, reference_audio, speed, etc.
     // Llamamos a la función de síntesis del espacio
-    // Usamos parámetros posicionales según la estructura estándar de Qwen3-TTS en Gradio
-    const result: any = await client.predict(0, [
-      text,       // input_text
-      voiceBlob,  // raw_audio (reference audio)
+    // Usamos fn_index: 1 que suele corresponder al segundo tab (Voice Clone Base)
+    // Parámetros: [ref_audio, ref_text, target_text, language, model_size]
+    const result: any = await client.predict(1, [
+      voiceBlob,       // reference_audio
+      "",              // reference_text (vacio si no se tiene la transcripcion exacta)
+      text,            // target_text
+      "Spanish",       // language
+      "1.7B-Base",     // model_size (ajustado a valor tipico)
     ]);
 
     // Gradio devuelve una URL del archivo generado o un objeto con la data
