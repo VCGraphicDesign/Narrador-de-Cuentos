@@ -253,6 +253,8 @@ export default function App() {
         await window.aistudio.openSelectKey();
         setProfileError(null);
         setStory(prev => ({ ...prev, error: null, status: 'idle' }));
+      } else {
+        alert("Para que la App funcione en Vercel, debes añadir la variable de entorno 'GEMINI_API_KEY' en el panel de control de Vercel y hacer un 'Redeploy'.");
       }
     } catch (err) { console.error(err); }
   };

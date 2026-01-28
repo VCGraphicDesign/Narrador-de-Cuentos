@@ -5,9 +5,13 @@ import { GoogleGenAI } from "@google/genai";
  * Genera el texto del cuento utilizando Gemini.
  */
 export async function generateStory(prompt: string): Promise<{ title: string; content: string }> {
-  // Use process.env.API_KEY directly as per the @google/genai SDK guidelines.
-  // Re-initializing right before call ensure we use the latest key from the dialog.
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+
+  if (!apiKey || apiKey === 'PLACEHOLDER_API_KEY') {
+    throw new Error("No se ha configurado la Llave de Gemini (GEMINI_API_KEY). Por favor, agrégala en la configuración de Vercel.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
