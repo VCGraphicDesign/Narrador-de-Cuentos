@@ -47,28 +47,39 @@ export async function generateExternalTTS(
     const res = await fetch(`data:${audioMimeType || 'audio/wav'};base64,${audioSampleBase64}`);
     const voiceBlob = await res.blob();
 
-    // Llamamos a la función de síntesis (predict) del espacio
-    // Nota: El orden de los parámetros depende del Space de Gradio.
-    // Para Qwen3-TTS suele ser: text, reference_audio, speed, etc.
     // Llamamos a la función de síntesis del espacio
-    // Según la estructura típica de Qwen3-TTS para Voice Clone (Base):
-    // 0: target_text, 1: ref_audio, 2: ref_text, 3: use_xvector_only, 4: language, 5: model_size
+    // Usamos api_name: "/predict" si está disponible o el fn_index: 1
     const result: any = await client.predict(1, [
-      text,            // target_text (Lo que va a decir el narrador)
-      voiceBlob,       // ref_audio (Tu muestra de voz)
-      "",              // ref_text (En blanco si no tenemos la transcripción)
-      false,           // use_xvector_only (false para mejor calidad)
+      text,            // target_text
+      voiceBlob,       // ref_audio
+      "",              // ref_text
+      false,           // use_xvector_only
       "Spanish",       // language
-      "1.7B-Base",     // model_size (opción de mayor calidad)
+      "1.7B-Base",     // model_size
     ]);
 
-    // Validamos la respuesta del servidor
-    if (!result || !result.data || !result.data[0]) {
-      console.error("Respuesta inesperada de Hugging Face:", result);
-      throw new Error("Hugging Face no pudo generar el audio. Verifica tu muestra de voz.");
+    // Si el resultado es un objeto de estado (cola de espera), 
+    // significa que el cliente no esperó automáticamente. 
+    // Intentamos extraer la data si el result es exitoso o reintentamos.
+    let finalResult = result;
+
+    // Si lo que recibimos es una notificación de estado, 
+    // es que necesitamos usar el método 'submit' para esperar a la cola.
+    if (result && result.type === 'status') {
+      console.log("Detectada cola de espera en HF, sincronizando...");
+      // Reintentamos una vez con un patron de espera
+      await new Promise(r => setTimeout(r, 2000));
+      const retry: any = await client.predict(1, [text, voiceBlob, "", false, "Spanish", "1.7B-Base"]);
+      finalResult = retry;
     }
 
-    const audioDataUrl = result.data[0].url;
+    // Validamos la respuesta del servidor
+    if (!finalResult || !finalResult.data || !finalResult.data[0]) {
+      console.error("Respuesta final fallida de HF:", finalResult);
+      throw new Error("El bosque de Hugging Face está saturado (Error de Cola). Intenta con un cuento más corto.");
+    }
+
+    const audioDataUrl = finalResult.data[0].url;
     if (!audioDataUrl) {
       throw new Error("El servidor no devolvió una URL de audio válida.");
     }
