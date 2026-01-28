@@ -213,9 +213,16 @@ const StoryViewer: React.FC<{ state: StoryState; onSelectKey: () => void }> = ({
                   className="bg-rose-500 h-full transition-all duration-500 ease-out"
                   style={{ width: `${(state.progress.current / state.progress.total) * 100}%` }}
                 />
-                <p className="text-rose-400 font-bold text-xs mt-6 uppercase tracking-widest">
-                  Página {state.progress.current} de {state.progress.total}
-                </p>
+                <div className="flex justify-between items-center mt-6">
+                  <p className="text-rose-400 font-bold text-xs uppercase tracking-widest">
+                    Página {state.progress.current} de {state.progress.total}
+                  </p>
+                  {state.progress.queuePosition !== undefined && state.progress.queuePosition > 0 && (
+                    <p className="text-rose-500 font-black text-xs uppercase tracking-tighter bg-white px-3 py-1 rounded-full shadow-sm animate-bounce">
+                      Posición en cola: #{state.progress.queuePosition}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 
@@ -347,7 +354,17 @@ export default function App() {
           chunks[i],
           currentId,
           profileRef.current?.sampleBase64,
-          profileRef.current?.mimeType
+          profileRef.current?.mimeType,
+          (s) => {
+            setStory(prev => ({
+              ...prev,
+              progress: {
+                current: i + 1,
+                total: chunks.length,
+                queuePosition: s.position
+              }
+            }));
+          }
         );
         audioResults.push(partResult);
       }

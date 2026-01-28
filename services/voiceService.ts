@@ -32,7 +32,8 @@ export async function generateExternalTTS(
   text: string,
   voiceId: string,
   audioSampleBase64?: string,
-  audioMimeType?: string
+  audioMimeType?: string,
+  onStatus?: (status: { stage: string, position: number }) => void
 ): Promise<{ data: string, mimeType: string }> {
 
   if (!audioSampleBase64) {
@@ -89,6 +90,9 @@ export async function generateExternalTTS(
       // Escuchar estatus para debug
       job.on("status", (s: any) => {
         console.log(`Estado (Hugging Face): ${s.stage} - Posición: ${s.position || 0}`);
+        if (onStatus) {
+          onStatus({ stage: s.stage, position: s.position || 0 });
+        }
       });
     });
 

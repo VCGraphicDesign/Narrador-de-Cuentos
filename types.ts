@@ -7,7 +7,7 @@ export interface StoryState {
   isLoading: boolean;
   status: 'idle' | 'generating-text' | 'generating-audio' | 'ready' | 'error';
   error: string | null;
-  progress?: { current: number; total: number };
+  progress?: { current: number; total: number; queuePosition?: number };
 }
 
 export interface VoiceProfile {
