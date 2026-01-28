@@ -1,0 +1,7 @@
+{
+  "name": "Narrador de Cuentos",
+  "description": "Un generador mágico de cuentos infantiles que convierte tus ideas en aventuras narradas con voces personalizadas.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
