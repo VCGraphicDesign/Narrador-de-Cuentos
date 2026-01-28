@@ -183,16 +183,48 @@ const StoryViewer: React.FC<{ state: StoryState; onSelectKey: () => void }> = ({
       )}
 
       {state.isLoading && (
-        <div className="flex flex-col items-center py-16 gap-8">
+        <div className="flex flex-col items-center py-16 gap-10">
           <div className="relative">
-            <div className="w-24 h-24 border-[10px] border-rose-100 border-t-rose-500 rounded-full animate-spin shadow-lg" />
-            <div className="absolute inset-0 flex items-center justify-center text-4xl">🪄</div>
+            {state.status === 'generating-text' ? (
+              // Libro abriéndose para cuando se escribe el texto
+              <div className="magical-book">
+                <div className="book-base"></div>
+                <div className="book-page"></div>
+                <div className="absolute -top-4 -right-4 text-3xl animate-bounce">🖋️</div>
+              </div>
+            ) : (
+              // Reloj de arena para cuando está en la cola de voz
+              <div className="flex flex-col items-center">
+                <div className="magical-hourglass">⏳</div>
+              </div>
+            )}
           </div>
-          <p className="text-rose-600 font-black animate-pulse text-2xl uppercase tracking-[0.2em] text-center">
-            {state.status === 'generating-text' ? 'Escribiendo magia...' :
-              state.status === 'generating-audio' ? 'Grabando tu voz...' :
-                'Preparando aventura...'}
-          </p>
+
+          <div className="text-center space-y-4">
+            <p className="text-rose-600 font-black animate-pulse text-2xl uppercase tracking-[0.2em]">
+              {state.status === 'generating-text' ? 'Escribiendo magia...' :
+                state.status === 'generating-audio' ? 'Narrando tu aventura...' :
+                  'Preparando hechizos...'}
+            </p>
+
+            {state.progress && (
+              <div className="bg-rose-100 rounded-full h-4 w-64 mx-auto overflow-hidden border-2 border-rose-300 shadow-inner">
+                <div
+                  className="bg-rose-500 h-full transition-all duration-500 ease-out"
+                  style={{ width: `${(state.progress.current / state.progress.total) * 100}%` }}
+                />
+                <p className="text-rose-400 font-bold text-xs mt-6 uppercase tracking-widest">
+                  Página {state.progress.current} de {state.progress.total}
+                </p>
+              </div>
+            )}
+
+            {state.status === 'generating-audio' && (
+              <p className="text-rose-400 font-medium italic text-sm mt-4 max-w-[280px] mx-auto">
+                Estamos en la cola del bosque mágico. Tu voz llegará pronto...
+              </p>
+            )}
+          </div>
         </div>
       )}
 
@@ -305,8 +337,12 @@ export default function App() {
       const audioResults: { data: string, mimeType: string }[] = [];
 
       for (let i = 0; i < chunks.length; i++) {
-        // Actualizamos el estado para mostrar progreso (opcional)
-        console.log(`Generando parte ${i + 1} de ${chunks.length}...`);
+        // Actualizamos el estado para mostrar progreso
+        setStory(prev => ({
+          ...prev,
+          progress: { current: i + 1, total: chunks.length }
+        }));
+
         const partResult = await generateExternalTTS(
           chunks[i],
           currentId,
