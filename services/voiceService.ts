@@ -51,18 +51,27 @@ export async function generateExternalTTS(
     // Nota: El orden de los parámetros depende del Space de Gradio.
     // Para Qwen3-TTS suele ser: text, reference_audio, speed, etc.
     // Llamamos a la función de síntesis del espacio
-    // Usamos fn_index: 1 que suele corresponder al segundo tab (Voice Clone Base)
-    // Parámetros: [ref_audio, ref_text, target_text, language, model_size]
+    // Según la estructura típica de Qwen3-TTS para Voice Clone (Base):
+    // 0: target_text, 1: ref_audio, 2: ref_text, 3: use_xvector_only, 4: language, 5: model_size
     const result: any = await client.predict(1, [
-      voiceBlob,       // reference_audio
-      "",              // reference_text (vacio si no se tiene la transcripcion exacta)
-      text,            // target_text
+      text,            // target_text (Lo que va a decir el narrador)
+      voiceBlob,       // ref_audio (Tu muestra de voz)
+      "",              // ref_text (En blanco si no tenemos la transcripción)
+      false,           // use_xvector_only (false para mejor calidad)
       "Spanish",       // language
-      "1.7B-Base",     // model_size (ajustado a valor tipico)
+      "1.7B-Base",     // model_size (opción de mayor calidad)
     ]);
 
-    // Gradio devuelve una URL del archivo generado o un objeto con la data
+    // Validamos la respuesta del servidor
+    if (!result || !result.data || !result.data[0]) {
+      console.error("Respuesta inesperada de Hugging Face:", result);
+      throw new Error("Hugging Face no pudo generar el audio. Verifica tu muestra de voz.");
+    }
+
     const audioDataUrl = result.data[0].url;
+    if (!audioDataUrl) {
+      throw new Error("El servidor no devolvió una URL de audio válida.");
+    }
 
     const audioResponse = await fetch(audioDataUrl);
     const audioBlobResult = await audioResponse.blob();
