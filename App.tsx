@@ -261,9 +261,21 @@ const StoryViewer: React.FC<{ state: StoryState; onSelectKey: () => void }> = ({
                   <svg className="h-16 w-16 ml-3" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                 )}
               </button>
-              <div className="text-center">
-                <p className="text-rose-700 font-black text-xl uppercase tracking-[0.3em] mb-1">REPRODUCIR</p>
-                <p className="text-rose-400 font-black text-sm uppercase bg-white/80 px-4 py-1 rounded-full shadow-sm">✨ Con tu voz mágica ✨</p>
+
+              <div className="flex flex-col gap-4 w-full px-8">
+                <div className="text-center">
+                  <p className="text-rose-700 font-black text-xl uppercase tracking-[0.3em] mb-1">REPRODUCIR</p>
+                  <p className="text-rose-400 font-black text-sm uppercase bg-white/80 px-4 py-1 rounded-full shadow-sm">✨ Con tu voz mágica ✨</p>
+                </div>
+
+                <a
+                  href={`data:${state.audioMimeType || 'audio/mpeg'};base64,${state.audioBase64}`}
+                  download={`Cuento-${state.title.replace(/\s+/g, '-')}.mp3`}
+                  className="flex items-center justify-center gap-2 bg-white text-rose-500 font-bold py-3 px-6 rounded-2xl shadow-md hover:bg-rose-50 transition-all active:scale-95 border-2 border-rose-100 mx-auto"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                  DESCARGAR AUDIO
+                </a>
               </div>
             </div>
           )}
