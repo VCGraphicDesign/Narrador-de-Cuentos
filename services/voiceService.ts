@@ -28,6 +28,8 @@ export async function createExternalVoiceProfile(audioBase64: string, mimeType: 
  * Genera audio utilizando el modelo Qwen3-TTS en Hugging Face.
  * Envía el texto y la muestra de voz (audioBase64) en cada petición.
  */
+import { generateMiniMaxTTS } from './minimaxService';
+
 export async function generateExternalTTS(
   text: string,
   voiceId: string,
@@ -40,16 +42,42 @@ export async function generateExternalTTS(
     throw new Error("No hay muestra de voz para realizar la clonación.");
   }
 
+  // --- INTENTO 1: MiniMax (Prioritario, Rápido) ---
+  try {
+    console.log("Iniciando generación con MiniMax (Prioritario)...");
+    if (onStatus) onStatus({ stage: "Usando Narrador Veloz (MiniMax)...", position: 1 });
+
+    // Llamamos al servicio de MiniMax
+    const miniMaxResult = await generateMiniMaxTTS(text, audioSampleBase64, audioMimeType, onStatus);
+    return miniMaxResult;
+
+  } catch (miniMaxError: any) {
+    console.warn("Fallo MiniMax, cambiando a Hugging Face (Fallback):", miniMaxError);
+    if (onStatus) onStatus({ stage: "MiniMax ocupado, cambiando al Bosque Mágico...", position: 5 });
+
+    // --- INTENTO 2: Hugging Face (Respaldo, Gratis pero Lento) ---
+    return await generateHuggingFaceTTS(text, audioSampleBase64, audioMimeType, onStatus);
+  }
+}
+
+/**
+ * Lógica original de Hugging Face (Qwen3)
+ * Se mantiene como respaldo por si se acaban los créditos de MiniMax
+ */
+async function generateHuggingFaceTTS(
+  text: string,
+  audioSampleBase64: string,
+  audioMimeType?: string,
+  onStatus?: (status: { stage: string, position: number }) => void
+): Promise<{ data: string, mimeType: string }> {
+
   try {
     // Conectamos con el servidor de Hugging Face
     const client = await Client.connect(VOICE_SERVICE_CONFIG.SPACE_NAME);
 
-    // Convertimos la muestra Base64 a un Blob
     const res = await fetch(`data:${audioMimeType || 'audio/wav'};base64,${audioSampleBase64}`);
     const voiceBlob = await res.blob();
 
-    // Usamos .submit() que devuelve un iterable asíncrono
-    // Parámetros: [target_text, ref_audio, ref_text, use_xvector_only, language, model_size]
     const job = client.submit(1, [
       text,            // target_text
       voiceBlob,       // ref_audio
@@ -59,20 +87,14 @@ export async function generateExternalTTS(
       "1.7B-Base",     // model_size
     ]);
 
-    // Iteramos sobre los eventos que nos va enviando Gradio
     for await (const event of job) {
-      // Evento de status (posición en cola, etc.)
       if (event.type === "status") {
         const stage = event.stage || "unknown";
         const position = event.queue_position || 0;
         console.log(`Estado (Hugging Face): ${stage} - Posición: ${position}`);
-
-        if (onStatus) {
-          onStatus({ stage, position });
-        }
+        if (onStatus) onStatus({ stage, position });
       }
 
-      // Evento de data (resultado final)
       if (event.type === "data") {
         if (event.data && event.data[0] && event.data[0].url) {
           const audioDataUrl = event.data[0].url;
@@ -91,14 +113,12 @@ export async function generateExternalTTS(
         }
       }
 
-      // Evento de error
       if (event.type === "error") {
         console.error("Error en el Job de Gradio:", event);
-        throw new Error("El Bosque de Hugging Face está saturado. Intenta de nuevo en unos segundos.");
+        throw new Error("El Bosque de Hugging Face está saturado.");
       }
     }
 
-    // Si llegamos aquí sin haber retornado, algo salió mal
     throw new Error("No se recibió audio del servidor de voz.");
 
   } catch (error: any) {
