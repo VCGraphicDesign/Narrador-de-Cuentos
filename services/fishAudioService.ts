@@ -1,5 +1,5 @@
 
-import * as msgpack from "msgpack-lite";
+import { encode } from "@msgpack/msgpack";
 
 /**
  * Configuración del servicio Fish Audio
@@ -7,7 +7,6 @@ import * as msgpack from "msgpack-lite";
 const FISH_AUDIO_CONFIG = {
     API_URL_TTS: "https://api.fish.audio/v1/tts",
     // La API Key se inyectará. Para desarrollo local la ponemos aquí (temporalmente).
-    // Fish Audio usa MessagePack para enviar el audio binario, es muy eficiente.
     API_KEY: process.env.VITE_FISH_AUDIO_API_KEY || "b6f11525a2d146b5b7babac88e7a1901",
 };
 
@@ -29,29 +28,23 @@ export async function generateFishAudioTTS(
     if (onStatus) onStatus({ stage: "Usando Pez Mágico (Fish Audio)...", position: 1 });
 
     try {
-        // 1. Convertir la muestra de Base64 a Bytes (ArrayBuffer)
+        // 1. Convertir la muestra de Base64 a Bytes (Uint8Array)
         const audioReferenceResponse = await fetch(`data:audio/wav;base64,${audioSampleBase64}`);
         const audioReferenceBlob = await audioReferenceResponse.blob();
         // Necesitamos convertir el blob a un Array de bytes para enviarlo
         const audioReferenceBuffer = await audioReferenceBlob.arrayBuffer();
-        // Convertirlo a array de números para el JSON si es necesario, 
-        // pero Fish Audio suele pedir referencias subidas o bytes.
-        // Revisando doc: Fish Audio tiene endpoint /v1/tts que acepta "references" como objetos con "audio" (bytes/base64).
+        const audioReferenceBytes = new Uint8Array(audioReferenceBuffer);
 
-        // Preparar el cuerpo de la petición (MessagePack es preferido por Fish Audio para eficiencia)
-        // Pero su API REST estándar acepta JSON con referencias en hexadecimal o base64?
-        // Vamos a usar el endpoint estándar JSON para simplificar primero.
-
-        // Fish Audio API Request Object
+        // Preparar el cuerpo de la petición usando la librería oficial @msgpack/msgpack que es compatible con navegadores
         const requestBody = {
             text: text,
-            chunk_length: 200, // Speed optimization
+            chunk_length: 200,
             format: "mp3",
             mp3_bitrate: 128,
             references: [
                 {
-                    audio: await blobToBytes(audioReferenceBlob), // Enviamos los bytes crudos si usamos MessagePack
-                    text: "" // Texto de referencia opcional
+                    audio: audioReferenceBytes, // Enviamos los bytes crudos
+                    text: ""
                 }
             ],
             reference_id: null,
@@ -59,8 +52,7 @@ export async function generateFishAudioTTS(
             latency: "normal"
         };
 
-        // Para usar MessagePack (requerido para enviar audio binario en la misma request eficientemente)
-        const encodedBody = msgpack.encode(requestBody);
+        const encodedBody = encode(requestBody);
 
         const response = await fetch(FISH_AUDIO_CONFIG.API_URL_TTS, {
             method: "POST",
@@ -89,12 +81,6 @@ export async function generateFishAudioTTS(
         console.error("Error crítico en Fish Audio Service:", error);
         throw new Error("El Pez Mágico no respondió.");
     }
-}
-
-// Utilidad: Blob a Array de Bytes (Uint8Array)
-async function blobToBytes(blob: Blob): Promise<Uint8Array> {
-    const buffer = await blob.arrayBuffer();
-    return new Uint8Array(buffer);
 }
 
 // Utilidad: ArrayBuffer a Base64
