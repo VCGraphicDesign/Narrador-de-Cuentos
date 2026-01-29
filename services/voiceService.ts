@@ -1,5 +1,6 @@
 
 import { generateMiniMaxTTS } from './minimaxService';
+import { generateFishAudioTTS } from './fishAudioService';
 
 /**
  * Para el espacio de Hugging Face, no creamos un perfil persistente en su servidor,
@@ -12,13 +13,12 @@ export async function createExternalVoiceProfile(audioBase64: string, mimeType: 
   }
 
   // En esta versión, el "profileId" es solo un marcador interno.
-  // La muestra real se guarda en el estado de la App y se envía a HF.
-  return "MINIMAX_LOCAL";
+  return "DUAL_ENGINE_LOCAL";
 }
 
 /**
- * Genera audio utilizando EXCLUSIVAMENTE MiniMax.
- * El respaldo de Hugging Face ha sido eliminado para simplificar y limpiar el código.
+ * Genera audio utilizando MiniMax (Prioridad 1) y Fish Audio (Prioridad 2).
+ * Sistema de doble motor para máxima fiabilidad gratuita.
  */
 export async function generateExternalTTS(
   text: string,
@@ -32,7 +32,7 @@ export async function generateExternalTTS(
     throw new Error("No hay muestra de voz para realizar la clonación.");
   }
 
-  // --- SOLO MiniMax (Prioritario, Rápido) ---
+  // --- INTENTO 1: MiniMax (Prioritario, Rápido) ---
   try {
     console.log("Iniciando generación con MiniMax...");
     if (onStatus) onStatus({ stage: "Usando Narrador Veloz (MiniMax)...", position: 1 });
@@ -42,9 +42,16 @@ export async function generateExternalTTS(
     return miniMaxResult;
 
   } catch (miniMaxError: any) {
-    console.error("Fallo crítico en MiniMax:", miniMaxError);
-    if (onStatus) onStatus({ stage: "Error en el narrador...", position: 0 });
+    console.warn("Fallo MiniMax, activando motor de respaldo (Fish Audio):", miniMaxError);
+    if (onStatus) onStatus({ stage: "Activando motor de respaldo (Fish Audio)...", position: 2 });
 
-    throw new Error("El narrador veloz (MiniMax) tuvo un problema. Por favor intenta de nuevo.");
+    // --- INTENTO 2: Fish Audio (Respaldo) ---
+    try {
+      const fishResult = await generateFishAudioTTS(text, audioSampleBase64, onStatus);
+      return fishResult;
+    } catch (fishError: any) {
+      console.error("Fallo crítico en ambos motores:", fishError);
+      throw new Error("Lo sentimos, ambos narradores mágicos están durmiendo. Intenta más tarde.");
+    }
   }
 }
