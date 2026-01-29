@@ -48,26 +48,38 @@ export async function generateExternalTTS(
     const res = await fetch(`data:${audioMimeType || 'audio/wav'};base64,${audioSampleBase64}`);
     const voiceBlob = await res.blob();
 
-    return new Promise((resolve, reject) => {
-      // Usamos .submit() en lugar de .predict() para tener control total sobre la cola (queue)
-      // Parámetros: [target_text, ref_audio, ref_text, use_xvector_only, language, model_size]
-      const job = client.submit(1, [
-        text,            // target_text
-        voiceBlob,       // ref_audio
-        "",              // ref_text
-        false,           // use_xvector_only
-        "Spanish",       // language
-        "1.7B-Base",     // model_size
-      ]);
+    // Usamos .submit() que devuelve un iterable asíncrono
+    // Parámetros: [target_text, ref_audio, ref_text, use_xvector_only, language, model_size]
+    const job = client.submit(1, [
+      text,            // target_text
+      voiceBlob,       // ref_audio
+      "",              // ref_text
+      false,           // use_xvector_only
+      "Spanish",       // language
+      "1.7B-Base",     // model_size
+    ]);
 
-      // Escuchamos el evento de éxito
-      job.on("data", async (event: any) => {
-        try {
-          if (event.data && event.data[0] && event.data[0].url) {
-            const audioDataUrl = event.data[0].url;
-            const audioResponse = await fetch(audioDataUrl);
-            const audioBlobResult = await audioResponse.blob();
+    // Iteramos sobre los eventos que nos va enviando Gradio
+    for await (const event of job) {
+      // Evento de status (posición en cola, etc.)
+      if (event.type === "status") {
+        const stage = event.stage || "unknown";
+        const position = event.queue_position || 0;
+        console.log(`Estado (Hugging Face): ${stage} - Posición: ${position}`);
 
+        if (onStatus) {
+          onStatus({ stage, position });
+        }
+      }
+
+      // Evento de data (resultado final)
+      if (event.type === "data") {
+        if (event.data && event.data[0] && event.data[0].url) {
+          const audioDataUrl = event.data[0].url;
+          const audioResponse = await fetch(audioDataUrl);
+          const audioBlobResult = await audioResponse.blob();
+
+          return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onloadend = () => {
               const base64String = (reader.result as string).split(',')[1];
@@ -75,26 +87,19 @@ export async function generateExternalTTS(
             };
             reader.onerror = () => reject(new Error("Error al procesar el audio devuelto por Hugging Face"));
             reader.readAsDataURL(audioBlobResult);
-          }
-        } catch (e) {
-          reject(e);
+          });
         }
-      });
+      }
 
-      // Escuchamos el evento de error
-      job.on("error", (err: any) => {
-        console.error("Error en el Job de Gradio:", err);
-        reject(new Error("El Bosque de Hugging Face está saturado. Intenta de nuevo en unos segundos."));
-      });
+      // Evento de error
+      if (event.type === "error") {
+        console.error("Error en el Job de Gradio:", event);
+        throw new Error("El Bosque de Hugging Face está saturado. Intenta de nuevo en unos segundos.");
+      }
+    }
 
-      // Escuchar estatus para debug
-      job.on("status", (s: any) => {
-        console.log(`Estado (Hugging Face): ${s.stage} - Posición: ${s.position || 0}`);
-        if (onStatus) {
-          onStatus({ stage: s.stage, position: s.position || 0 });
-        }
-      });
-    });
+    // Si llegamos aquí sin haber retornado, algo salió mal
+    throw new Error("No se recibió audio del servidor de voz.");
 
   } catch (error: any) {
     console.error("Error en Qwen3-TTS (Hugging Face):", error);
