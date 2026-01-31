@@ -160,7 +160,7 @@ const StoryViewer: React.FC<{ state: StoryState; onSelectKey: () => void }> = ({
   useEffect(() => {
     if (state.audioBase64 && audioRef.current) {
       const bytes = decodeBase64(state.audioBase64);
-      const audioBlob = new Blob([bytes], { type: state.audioMimeType || 'audio/mpeg' });
+      const audioBlob = new Blob([bytes.buffer as ArrayBuffer], { type: state.audioMimeType || 'audio/mpeg' });
       const url = URL.createObjectURL(audioBlob);
       audioRef.current.src = url;
       audioRef.current.load();

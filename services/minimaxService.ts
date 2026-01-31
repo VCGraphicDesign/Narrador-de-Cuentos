@@ -10,8 +10,8 @@ const MINIMAX_CONFIG = {
     // La API Key y el Group ID se inyectarán desde las variables de entorno o la configuración interna
     // Nota: Por seguridad, en un entorno real NO se debería poner la API Key en el código cliente.
     // Como esto es un prototipo local/Vercel, usaremos una variable o la inyectaremos.
-    API_KEY: process.env.VITE_MINIMAX_API_KEY || "sk-api-rRtqtw786Yo-13yvI62LlfySbFcPBH7i0ckzo2kIREBxOW2f2r8lqKF9JCNuiSLWtHt6t9LxP6Omi8lP1yKYjjSCCM4MrdsdbxsCGLbma7VMSRBmzhJsbnE",
-    GROUP_ID: process.env.VITE_MINIMAX_GROUP_ID || "473267587529936904",
+    API_KEY: (import.meta as any).env?.VITE_MINIMAX_API_KEY || (window as any).process?.env?.VITE_MINIMAX_API_KEY || "sk-api-rRtqtw786Yo-13yvI62LlfySbFcPBH7i0ckzo2kIREBxOW2f2r8lqKF9JCNuiSLWtHt6t9LxP6Omi8lP1yKYjjSCCM4MrdsdbxsCGLbma7VMSRBmzhJsbnE",
+    GROUP_ID: (import.meta as any).env?.VITE_MINIMAX_GROUP_ID || (window as any).process?.env?.VITE_MINIMAX_GROUP_ID || "473267587529936904",
     MODEL_ID: "speech-01-turbo-240228", // Modelo rápido recomendado
 };
 

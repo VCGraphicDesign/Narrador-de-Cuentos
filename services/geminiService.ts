@@ -5,7 +5,7 @@ import { GoogleGenAI } from "@google/genai";
  * Genera el texto del cuento utilizando Gemini.
  */
 export async function generateStory(prompt: string): Promise<{ title: string; content: string }> {
-  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+  const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (import.meta as any).env?.GEMINI_API_KEY || (window as any).process?.env?.API_KEY || (window as any).process?.env?.GEMINI_API_KEY;
 
   if (!apiKey || apiKey === 'PLACEHOLDER_API_KEY') {
     throw new Error("No se ha configurado la Llave de Gemini (GEMINI_API_KEY). Por favor, agrégala en la configuración de Vercel.");
