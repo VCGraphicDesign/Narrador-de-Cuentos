@@ -28,54 +28,26 @@ export async function generateFishAudioTTS(
     if (onStatus) onStatus({ stage: "Usando Pez Mágico (Fish Audio)...", position: 1 });
 
     try {
-        // 1. Convertir la muestra de Base64 a Bytes (Uint8Array)
-        const audioReferenceResponse = await fetch(`data:audio/wav;base64,${audioSampleBase64}`);
-        const audioReferenceBlob = await audioReferenceResponse.blob();
-        // Necesitamos convertir el blob a un Array de bytes para enviarlo
-        const audioReferenceBuffer = await audioReferenceBlob.arrayBuffer();
-        const audioReferenceBytes = new Uint8Array(audioReferenceBuffer);
-
-        // Preparar el cuerpo de la petición usando la librería oficial @msgpack/msgpack que es compatible con navegadores
-        const requestBody = {
-            text: text,
-            chunk_length: 200,
-            format: "mp3",
-            mp3_bitrate: 128,
-            references: [
-                {
-                    audio: audioReferenceBytes, // Enviamos los bytes crudos
-                    text: ""
-                }
-            ],
-            reference_id: null,
-            normalize: true,
-            latency: "normal"
-        };
-
-        const encodedBody = encode(requestBody);
-
-        const response = await fetch(FISH_AUDIO_CONFIG.API_URL_TTS, {
-            method: "POST",
+        // Call our serverless function instead of direct API
+        const response = await fetch('/api/fishaudio', {
+            method: 'POST',
             headers: {
-                "Authorization": `Bearer ${FISH_AUDIO_CONFIG.API_KEY}`,
-                "Content-Type": "application/msgpack", // Importante: indicamos que enviamos msgpack
+                'Content-Type': 'application/json',
             },
-            body: encodedBody,
+            body: JSON.stringify({
+                audioBase64: audioSampleBase64,
+                text: text,
+            }),
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error("Fish Audio Error:", errorText);
-            throw new Error(`Error en Fish Audio: ${response.status}`);
+            const errorData = await response.json();
+            console.error("Fish Audio API Error:", errorData);
+            throw new Error(`Error en Fish Audio: ${errorData.error}`);
         }
 
-        const responseBuffer = await response.arrayBuffer();
-        // La respuesta es el archivo de audio directo (bytes)
-
-        // Convertir a Base64 para la App
-        const base64Audio = arrayBufferToBase64(responseBuffer);
-
-        return { data: base64Audio, mimeType: 'audio/mp3' };
+        const data = await response.json();
+        return { data: data.data, mimeType: data.mimeType };
 
     } catch (error: any) {
         console.error("Error crítico en Fish Audio Service:", error);

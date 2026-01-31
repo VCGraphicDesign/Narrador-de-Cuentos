@@ -70,85 +70,29 @@ export async function generateMiniMaxTTS(
     }
 
     // Notificar estado
-    if (onStatus) onStatus({ stage: "Subiendo muestra de voz...", position: 1 });
+    if (onStatus) onStatus({ stage: "Generando con MiniMax...", position: 1 });
 
     try {
-        // 1. Convertir Base64 a Blob
-        const res = await fetch(`data:${audioMimeType};base64,${audioSampleBase64}`);
-        const audioBlob = await res.blob();
-
-        // 2. Subir la muestra a MiniMax
-        const fileId = await uploadVoiceSampleToMiniMax(audioBlob);
-        console.log("Voz subida a MiniMax con ID:", fileId);
-
-        // Notificar estado
-        if (onStatus) onStatus({ stage: "Generando audio clonado...", position: 0 });
-
-        // 3. Solicitar la generación del audio (Voice Cloning)
-        // Según la doc de MiniMax T2A v2:
-        // POST https://api.minimax.chat/v1/t2a_v2?GroupId={GroupID}
-        const payload = {
-            model: MINIMAX_CONFIG.MODEL_ID,
-            text: text,
-            stream: false, // Queremos el audio completo, no streaming por ahora para simplificar
-            voice_setting: {
-                voice_id: "voice_clone", // Indicamos que es un clon
-                speed: 1.0,
-                vol: 1.0,
-                pitch: 0,
-                emotion: "happy", // Podemos ajustar esto luego
-            },
-            pronunciation_dict: {
-                tone: [],
-            },
-            voice_clone_file_id: fileId, // Aquí va el ID del archivo subido
-            audio_setting: {
-                sample_rate: 32000,
-                bitrate: 128000,
-                format: "mp3",
-                channel: 1,
-            }
-        };
-
-        const ttsResponse = await fetch(`${MINIMAX_CONFIG.API_URL_T2A}?GroupId=${MINIMAX_CONFIG.GROUP_ID}`, {
-            method: "POST",
+        // Call our serverless function instead of direct API
+        const response = await fetch('/api/minimax', {
+            method: 'POST',
             headers: {
-                "Authorization": `Bearer ${MINIMAX_CONFIG.API_KEY}`,
-                "Content-Type": "application/json",
+                'Content-Type': 'application/json',
             },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({
+                audioBase64: audioSampleBase64,
+                text: text,
+            }),
         });
 
-        if (!ttsResponse.ok) {
-            const errorDetail = await ttsResponse.text();
-            console.error("MiniMax TTS Error:", errorDetail);
-            throw new Error(`Error generando audio en MiniMax: ${ttsResponse.status}`);
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("MiniMax API Error:", errorData);
+            throw new Error(`Error en MiniMax: ${errorData.error}`);
         }
 
-        const ttsData = await ttsResponse.json();
-
-        // MiniMax devuelve la data binary en 'data.audio_file' (url) o 'data.audio_content' (hex/base64?)
-        // Dependiendo de la versión, a veces devuelve una URL temporal o el contenido directamente.
-        // Revisando documentación común: suele devolver { data: { audio_file_url: "..." } } o parecido.
-        // Vamos a asumir que devuelve un JSON con audio_file (url) o content. 
-        // NOTA: v2 a veces devuelve Hex string en 'data.audio'.
-
-        // Ajuste según respuesta típica de MiniMax v2 (T2A):
-        // Respuesta exitosa: { base_resp: { status_code: 0 ... }, data: { audio: "hex string...", extra_info: ... } }
-
-        if (ttsData.base_resp && ttsData.base_resp.status_code !== 0) {
-            throw new Error(`MiniMax API Error: ${ttsData.base_resp.status_msg}`);
-        }
-
-        if (ttsData.data && ttsData.data.audio) {
-            // MiniMax v2 devuelve el audio como HEX STRING. Necesitamos convertirlo a Base64.
-            const hexString = ttsData.data.audio;
-            const base64String = hexToBase64(hexString);
-            return { data: base64String, mimeType: 'audio/mp3' };
-        } else {
-            console.error("Respuesta inesperada de MiniMax:", ttsData);
-            throw new Error("Formato de respuesta de MiniMax no reconocido.");
-        }
+        const data = await response.json();
+        return { data: data.data, mimeType: data.mimeType };
 
     } catch (error: any) {
         console.error("Error crítico en MiniMax Service:", error);
