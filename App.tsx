@@ -141,14 +141,21 @@ const StoryInput: React.FC<{
   onSubmit: (prompt: string) => void;
   isGenerating: boolean;
   isVoiceRecorded: boolean;
-}> = ({ onSubmit, isGenerating, isVoiceRecorded }) => {
+  isStoredMode: boolean;
+}> = ({ onSubmit, isGenerating, isVoiceRecorded, isStoredMode }) => {
   const [prompt, setPrompt] = useState('');
   return (
     <div className="glass-card rounded-[3rem] p-8 mb-8 shadow-xl border-rose-200 bg-rose-50/60">
       <div className="flex flex-col gap-5 text-center">
-        <div className="bg-rose-100 text-rose-600 px-5 py-1.5 rounded-2xl text-xs font-black uppercase tracking-widest self-center mb-2 border-2 border-rose-200">
-          Paso 2: La Gran Idea
-        </div>
+        {isStoredMode ? (
+          <div className="bg-rose-100/50 text-rose-800 px-6 py-3 rounded-2xl text-sm font-bold mb-2 border-2 border-rose-200 animate-fade-in">
+            ¡Abu, tu voz ya está detectada! Solo empieza a crear el cuento para que la magia comience. ✨
+          </div>
+        ) : (
+          <div className="bg-rose-100 text-rose-600 px-5 py-1.5 rounded-2xl text-xs font-black uppercase tracking-widest self-center mb-2 border-2 border-rose-200">
+            Paso 1: La Gran Idea
+          </div>
+        )}
         <h2 className="text-3xl font-lexend font-black text-rose-800">¿De qué trata el cuento?</h2>
         <textarea
           value={prompt}
@@ -444,19 +451,22 @@ export default function App() {
       <div className="max-w-3xl mx-auto px-6">
         <Header />
         <main className="space-y-10">
-          <VoiceProfileSection
-            profile={profile}
-            onProfileCreated={setProfile}
-            isRecording={isRecording}
-            setIsRecording={setIsRecording}
-            isCreatingProfile={isCreatingProfile}
-            error={profileError}
-            onSelectKey={handleSelectKey}
-          />
+          {profile?.id !== 'STORED_VOICE_MODE' && (
+            <VoiceProfileSection
+              profile={profile}
+              onProfileCreated={setProfile}
+              isRecording={isRecording}
+              setIsRecording={setIsRecording}
+              isCreatingProfile={isCreatingProfile}
+              error={profileError}
+              onSelectKey={handleSelectKey}
+            />
+          )}
           <StoryInput
             onSubmit={handleGenerateStory}
             isGenerating={story.isLoading}
             isVoiceRecorded={!!profile}
+            isStoredMode={profile?.id === 'STORED_VOICE_MODE'}
           />
           <StoryViewer state={story} onSelectKey={handleSelectKey} />
         </main>
