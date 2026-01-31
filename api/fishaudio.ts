@@ -14,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         const FISH_AUDIO_API_KEY = process.env.FISH_AUDIO_API_KEY || process.env.VITE_FISH_AUDIO_API_KEY;
-        const DEFAULT_REFERENCE_ID = process.env.FISH_AUDIO_REFERENCE_ID || process.env.VITE_FISH_AUDIO_REFERENCE_ID || "f90412dfe03d4e80bdf1b94bc6157b3e";
+        const DEFAULT_REFERENCE_ID = process.env.FISH_AUDIO_REFERENCE_ID || process.env.VITE_FISH_AUDIO_REFERENCE_ID;
 
         if (!FISH_AUDIO_API_KEY) {
             return res.status(500).json({ error: 'Falta la FISH_AUDIO_API_KEY en las variables de entorno de Vercel.' });

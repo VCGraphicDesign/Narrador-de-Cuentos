@@ -7,7 +7,7 @@ import { encode } from "@msgpack/msgpack";
 const FISH_AUDIO_CONFIG = {
     API_URL_TTS: "https://api.fish.audio/v1/tts",
     // La API Key se inyectará. Para desarrollo local la ponemos aquí (temporalmente).
-    API_KEY: (import.meta as any).env?.VITE_FISH_AUDIO_API_KEY || (window as any).process?.env?.VITE_FISH_AUDIO_API_KEY || "b6f11525a2d146b5b7babac88e7a1901",
+    API_KEY: (import.meta as any).env?.VITE_FISH_AUDIO_API_KEY || (window as any).process?.env?.VITE_FISH_AUDIO_API_KEY,
 };
 
 /**
