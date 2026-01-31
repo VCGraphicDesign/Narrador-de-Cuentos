@@ -7,34 +7,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        const { audioBase64, text } = req.body;
+        const { audioBase64, text, referenceId: overrideRefId } = req.body;
 
-        if (!audioBase64 || !text) {
-            return res.status(400).json({ error: 'Missing audioBase64 or text' });
+        if (!text) {
+            return res.status(400).json({ error: 'Missing text' });
         }
 
         const FISH_AUDIO_API_KEY = process.env.FISH_AUDIO_API_KEY || "b6f11525a2d146b5b7babac88e7a1901";
+        const DEFAULT_REFERENCE_ID = process.env.FISH_AUDIO_REFERENCE_ID;
 
-        // Convert base64 to bytes
-        const audioBuffer = Buffer.from(audioBase64, 'base64');
-        const audioBytes = new Uint8Array(audioBuffer);
+        const targetRefId = overrideRefId || DEFAULT_REFERENCE_ID;
 
         // Prepare msgpack request
-        const requestBody = {
+        const requestBody: any = {
             text: text,
             chunk_length: 200,
             format: "mp3",
             mp3_bitrate: 128,
-            references: [
+            normalize: true,
+            latency: "normal",
+            references: []
+        };
+
+        if (targetRefId) {
+            requestBody.reference_id = targetRefId;
+        } else if (audioBase64) {
+            const audioBuffer = Buffer.from(audioBase64, 'base64');
+            const audioBytes = new Uint8Array(audioBuffer);
+            requestBody.references = [
                 {
                     audio: audioBytes,
                     text: ""
                 }
-            ],
-            reference_id: null,
-            normalize: true,
-            latency: "normal"
-        };
+            ];
+        } else {
+            return res.status(400).json({ error: 'No Reference ID provided and no audio sample to clone.' });
+        }
 
         const encodedBody = encode(requestBody);
 
@@ -50,7 +58,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!response.ok) {
             const errorText = await response.text();
             console.error('Fish Audio Error:', errorText);
-            return res.status(500).json({ error: 'Failed to generate TTS', details: errorText });
+
+            // Try to parse as JSON for better error message
+            try {
+                const errJson = JSON.parse(errorText);
+                return res.status(500).json({ error: 'Failed to generate TTS from Fish Audio', details: errJson });
+            } catch (e) {
+                return res.status(500).json({ error: 'Failed to generate TTS', details: errorText });
+            }
         }
 
         const responseBuffer = await response.arrayBuffer();

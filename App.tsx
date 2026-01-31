@@ -114,8 +114,13 @@ const VoiceProfileSection: React.FC<{
             className={`w-10 h-10 object-contain transition-transform ${isRecording ? 'scale-125' : 'group-hover:rotate-12'}`}
             alt="Microfono"
           />
-          {isRecording ? "¡LISTO!" : profile ? "REHACER GRABACIÓN" : "GRABAR MI VOZ"}
+          {isRecording ? "¡LISTO!" : profile?.id === 'STORED_VOICE_MODE' ? "MODO VOZ PRE-GUARDADA" : profile ? "REHACER GRABACIÓN" : "GRABAR MI VOZ"}
         </button>
+        {profile?.id === 'STORED_VOICE_MODE' && (
+          <p className="text-rose-600 text-[10px] font-black uppercase mt-2 bg-white px-3 py-1 rounded-full shadow-sm border border-rose-100">
+            Usando tu voz guardada en la plataforma
+          </p>
+        )}
       </div>
     </div>
   );
@@ -304,6 +309,20 @@ export default function App() {
 
   const profileRef = useRef<VoiceProfile | null>(null);
   useEffect(() => { profileRef.current = profile; }, [profile]);
+
+  useEffect(() => {
+    const storedMiniMaxVoiceId = (import.meta as any).env?.VITE_MINIMAX_VOICE_ID;
+    const storedFishReferenceId = (import.meta as any).env?.VITE_FISH_AUDIO_REFERENCE_ID;
+
+    if ((storedMiniMaxVoiceId || storedFishReferenceId) && !profile) {
+      setProfile({
+        id: 'STORED_VOICE_MODE',
+        sampleBase64: '', // Not needed for stored mode
+        mimeType: 'audio/wav',
+        createdAt: Date.now()
+      });
+    }
+  }, []);
 
   const handleSelectKey = async () => {
     try {

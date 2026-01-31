@@ -17,11 +17,12 @@ const FISH_AUDIO_CONFIG = {
 export async function generateFishAudioTTS(
     text: string,
     audioSampleBase64: string,
-    onStatus?: (status: { stage: string, position: number }) => void
+    onStatus?: (status: { stage: string, position: number }) => void,
+    referenceId?: string
 ): Promise<{ data: string, mimeType: string }> {
 
-    if (!audioSampleBase64) {
-        throw new Error("Muestra de voz necesaria para Fish Audio.");
+    if (!audioSampleBase64 && !referenceId) {
+        throw new Error("Muestra de voz o Reference ID necesario para Fish Audio.");
     }
 
     // Notificar estado
@@ -37,6 +38,7 @@ export async function generateFishAudioTTS(
             body: JSON.stringify({
                 audioBase64: audioSampleBase64,
                 text: text,
+                referenceId: referenceId
             }),
         });
 
@@ -51,7 +53,7 @@ export async function generateFishAudioTTS(
 
     } catch (error: any) {
         console.error("Error crítico en Fish Audio Service:", error);
-        throw new Error("El Pez Mágico no respondió.");
+        throw new Error(error.message || "El Pez Mágico no respondió.");
     }
 }
 

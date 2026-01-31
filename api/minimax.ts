@@ -6,52 +6,70 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        const { audioBase64, text } = req.body;
+        const { audioBase64, text, voiceId: overrideVoiceId } = req.body;
 
-        if (!audioBase64 || !text) {
-            return res.status(400).json({ error: 'Missing audioBase64 or text' });
+        if (!text) {
+            return res.status(400).json({ error: 'Missing text' });
         }
 
         const MINIMAX_API_KEY = process.env.MINIMAX_API_KEY || "sk-api-rRtqtw786Yo-13yvI62LlfySbFcPBH7i0ckzo2kIREBxOW2f2r8lqKF9JCNuiSLWtHt6t9LxP6Omi8lP1yKYjjSCCM4MrdsdbxsCGLbma7VMSRBmzhJsbnE";
         const MINIMAX_GROUP_ID = process.env.MINIMAX_GROUP_ID || "473267587529936904";
+        const DEFAULT_VOICE_ID = process.env.MINIMAX_VOICE_ID;
 
-        // 1. Convert base64 to blob
-        const audioBuffer = Buffer.from(audioBase64, 'base64');
-        const formData = new FormData();
-        const blob = new Blob([audioBuffer], { type: 'audio/wav' });
-        formData.append('file', blob, 'voice_sample.wav');
-        formData.append('purpose', 'voice_clone');
+        const targetVoiceId = overrideVoiceId || DEFAULT_VOICE_ID;
 
-        // 2. Upload voice sample
-        const uploadResponse = await fetch(
-            `https://api.minimax.chat/v1/files/upload?GroupId=${MINIMAX_GROUP_ID}`,
-            {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${MINIMAX_API_KEY}`,
-                },
-                body: formData,
+        let fileId = null;
+
+        // If we have a voice ID, we use it directly. 
+        // If not, and we have audio, we attempt to upload.
+        if (!targetVoiceId) {
+            if (!audioBase64) {
+                return res.status(400).json({ error: 'No Voice ID provided and no audio sample to clone.' });
             }
-        );
 
-        if (!uploadResponse.ok) {
-            const errorText = await uploadResponse.text();
-            console.error('MiniMax Upload Error:', errorText);
-            return res.status(500).json({ error: 'Failed to upload voice sample', details: errorText });
-        }
+            // 1. Convert base64 to blob
+            const audioBuffer = Buffer.from(audioBase64, 'base64');
+            const formData = new FormData();
 
-        const uploadData = await uploadResponse.json();
-        if (!uploadData.file_id) {
-            return res.status(500).json({ error: 'No file_id returned from MiniMax' });
+            // In Node.js, we need to handle the blob correctly for FormData
+            const blob = new Blob([audioBuffer], { type: 'audio/wav' });
+            formData.append('file', blob, 'voice_sample.wav');
+            formData.append('purpose', 'voice_clone');
+
+            // 2. Upload voice sample
+            const uploadResponse = await fetch(
+                `https://api.minimax.chat/v1/files/upload?GroupId=${MINIMAX_GROUP_ID}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${MINIMAX_API_KEY}`,
+                    },
+                    body: formData,
+                }
+            );
+
+            if (!uploadResponse.ok) {
+                const errorText = await uploadResponse.text();
+                console.error('MiniMax Upload Error:', errorText);
+                return res.status(500).json({ error: 'Failed to upload voice sample', details: errorText });
+            }
+
+            const uploadData = await uploadResponse.json();
+            fileId = uploadData.file_id;
+
+            if (!fileId) {
+                return res.status(500).json({ error: 'MiniMax upload did not return a file_id. Check API Key and balance.' });
+            }
         }
 
         // 3. Generate TTS
-        const ttsPayload = {
+        const ttsPayload: any = {
             model: "speech-01-turbo-240228",
             text: text,
             stream: false,
             voice_setting: {
-                voice_id: "voice_clone",
+                // If we don't have a specific voiceId, we use "voice_clone" which works with voice_clone_file_id
+                voice_id: targetVoiceId || "voice_clone",
                 speed: 1.0,
                 vol: 1.0,
                 pitch: 0,
@@ -60,7 +78,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             pronunciation_dict: {
                 tone: [],
             },
-            voice_clone_file_id: uploadData.file_id,
             audio_setting: {
                 sample_rate: 32000,
                 bitrate: 128000,
@@ -68,6 +85,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 channel: 1,
             }
         };
+
+        // If we uploaded a file, attach it
+        if (fileId) {
+            ttsPayload.voice_clone_file_id = fileId;
+        }
 
         const ttsResponse = await fetch(
             `https://api.minimax.chat/v1/t2a_v2?GroupId=${MINIMAX_GROUP_ID}`,
@@ -94,7 +116,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (ttsData.data && ttsData.data.audio) {
-            // Convert hex to base64
             const hexString = ttsData.data.audio;
             const buffer = Buffer.from(hexString, 'hex');
             const base64Audio = buffer.toString('base64');

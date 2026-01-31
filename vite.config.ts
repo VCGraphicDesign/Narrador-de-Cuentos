@@ -13,6 +13,8 @@ export default defineConfig(({ mode }) => {
     define: {
       'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY),
       'import.meta.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY),
+      'import.meta.env.VITE_MINIMAX_VOICE_ID': JSON.stringify(env.VITE_MINIMAX_VOICE_ID),
+      'import.meta.env.VITE_FISH_AUDIO_REFERENCE_ID': JSON.stringify(env.VITE_FISH_AUDIO_REFERENCE_ID),
     },
     resolve: {
       alias: {

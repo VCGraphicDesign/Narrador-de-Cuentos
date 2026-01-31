@@ -9,6 +9,10 @@ import { generateFishAudioTTS } from './fishAudioService';
  */
 export async function createExternalVoiceProfile(audioBase64: string, mimeType: string): Promise<string> {
   if (!audioBase64) {
+    // If we have stored IDs in environment, this is valid
+    const storedMiniMaxVoiceId = (import.meta as any).env?.VITE_MINIMAX_VOICE_ID;
+    const storedFishReferenceId = (import.meta as any).env?.VITE_FISH_AUDIO_REFERENCE_ID;
+    if (storedMiniMaxVoiceId || storedFishReferenceId) return "DUAL_ENGINE_STORED";
     throw new Error("Muestra de voz no encontrada.");
   }
 
@@ -28,8 +32,12 @@ export async function generateExternalTTS(
   onStatus?: (status: { stage: string, position: number }) => void
 ): Promise<{ data: string, mimeType: string }> {
 
-  if (!audioSampleBase64) {
-    throw new Error("No hay muestra de voz para realizar la clonación.");
+  // Fetch IDs from environment variables if available
+  const storedMiniMaxVoiceId = (import.meta as any).env?.VITE_MINIMAX_VOICE_ID;
+  const storedFishReferenceId = (import.meta as any).env?.VITE_FISH_AUDIO_REFERENCE_ID;
+
+  if (!audioSampleBase64 && !storedMiniMaxVoiceId && !storedFishReferenceId) {
+    throw new Error("No hay muestra de voz ni IDs guardados para realizar la clonación.");
   }
 
   // --- INTENTO 1: MiniMax (Prioritario, Rápido) ---
@@ -37,8 +45,13 @@ export async function generateExternalTTS(
     console.log("Iniciando generación con MiniMax...");
     if (onStatus) onStatus({ stage: "Usando Narrador Veloz (MiniMax)...", position: 1 });
 
-    // Llamamos al servicio de MiniMax
-    const miniMaxResult = await generateMiniMaxTTS(text, audioSampleBase64, audioMimeType, onStatus);
+    const miniMaxResult = await generateMiniMaxTTS(
+      text,
+      audioSampleBase64 || "",
+      audioMimeType,
+      onStatus,
+      storedMiniMaxVoiceId
+    );
     return miniMaxResult;
 
   } catch (miniMaxError: any) {
@@ -47,11 +60,16 @@ export async function generateExternalTTS(
 
     // --- INTENTO 2: Fish Audio (Respaldo) ---
     try {
-      const fishResult = await generateFishAudioTTS(text, audioSampleBase64, onStatus);
+      const fishResult = await generateFishAudioTTS(
+        text,
+        audioSampleBase64 || "",
+        onStatus,
+        storedFishReferenceId
+      );
       return fishResult;
     } catch (fishError: any) {
       console.error("Fallo crítico en ambos motores:", fishError);
-      throw new Error("Lo sentimos, ambos narradores mágicos están durmiendo. Intenta más tarde.");
+      throw new Error("Lo sentimos, ambos narradores mágicos están durmiendo o necesitan configuración.");
     }
   }
 }

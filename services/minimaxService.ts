@@ -62,11 +62,12 @@ export async function generateMiniMaxTTS(
     text: string,
     audioSampleBase64: string,
     audioMimeType: string = 'audio/wav',
-    onStatus?: (status: { stage: string, position: number }) => void
+    onStatus?: (status: { stage: string, position: number }) => void,
+    voiceId?: string
 ): Promise<{ data: string, mimeType: string }> {
 
-    if (!audioSampleBase64) {
-        throw new Error("Muestra de voz necesaria para MiniMax.");
+    if (!audioSampleBase64 && !voiceId) {
+        throw new Error("Muestra de voz o Voice ID necesario para MiniMax.");
     }
 
     // Notificar estado
@@ -82,6 +83,7 @@ export async function generateMiniMaxTTS(
             body: JSON.stringify({
                 audioBase64: audioSampleBase64,
                 text: text,
+                voiceId: voiceId
             }),
         });
 
@@ -96,7 +98,7 @@ export async function generateMiniMaxTTS(
 
     } catch (error: any) {
         console.error("Error crítico en MiniMax Service:", error);
-        throw new Error("Error al conectar con el narrador veloz (MiniMax).");
+        throw new Error(error.message || "Error al conectar con el narrador veloz (MiniMax).");
     }
 }
 
