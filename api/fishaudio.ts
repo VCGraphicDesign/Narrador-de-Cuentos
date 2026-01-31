@@ -14,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         const FISH_AUDIO_API_KEY = process.env.FISH_AUDIO_API_KEY || "b6f11525a2d146b5b7babac88e7a1901";
-        const DEFAULT_REFERENCE_ID = process.env.FISH_AUDIO_REFERENCE_ID;
+        const DEFAULT_REFERENCE_ID = process.env.FISH_AUDIO_REFERENCE_ID || "f90412dfe03d4e80bdf1b94bc6157b3e";
 
         const targetRefId = overrideRefId || DEFAULT_REFERENCE_ID;
 

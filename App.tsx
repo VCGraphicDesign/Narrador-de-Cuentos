@@ -79,7 +79,7 @@ const VoiceProfileSection: React.FC<{
         </div>
 
         <h2 className="text-3xl font-lexend font-black text-rose-800">
-          {hasRealId ? "¡Voz Guardada! 🍃" : profile ? "¡Voz Recibida! ✨" : "¿Cómo es tu voz?"}
+          {hasRealId || profile?.id === 'STORED_VOICE_MODE' ? "¡VOZ DE LA ABU DETECTADA! ✨" : profile ? "¡Voz Recibida! ✨" : "¿Cómo es tu voz?"}
         </h2>
 
         {isCreatingProfile && (
@@ -95,8 +95,8 @@ const VoiceProfileSection: React.FC<{
           </div>
         )}
 
-        {hasRealId ? (
-          <p className="text-rose-800 font-bold bg-white/50 px-4 py-1 rounded-full border border-rose-200">¡Tu clon de voz está listo para narrar!</p>
+        {hasRealId || profile?.id === 'STORED_VOICE_MODE' ? (
+          <p className="text-rose-800 font-bold bg-white/50 px-4 py-1 rounded-full border border-rose-200">¡Tu esencia está lista para narrar cuentos!</p>
         ) : profile ? (
           <p className="text-rose-400 text-sm font-bold animate-pulse">Sincronizando tu esencia...</p>
         ) : (
@@ -114,11 +114,11 @@ const VoiceProfileSection: React.FC<{
             className={`w-10 h-10 object-contain transition-transform ${isRecording ? 'scale-125' : 'group-hover:rotate-12'}`}
             alt="Microfono"
           />
-          {isRecording ? "¡LISTO!" : profile?.id === 'STORED_VOICE_MODE' ? "MODO VOZ PRE-GUARDADA" : profile ? "REHACER GRABACIÓN" : "GRABAR MI VOZ"}
+          {isRecording ? "¡LISTO!" : profile?.id === 'STORED_VOICE_MODE' ? "MODO VOZ DE LA ABU" : profile ? "REHACER GRABACIÓN" : "GRABAR MI VOZ"}
         </button>
         {profile?.id === 'STORED_VOICE_MODE' && (
-          <p className="text-rose-600 text-[10px] font-black uppercase mt-2 bg-white px-3 py-1 rounded-full shadow-sm border border-rose-100">
-            Usando tu voz guardada en la plataforma
+          <p className="text-rose-600 text-[10px] font-black uppercase mt-2 bg-white px-3 py-1 rounded-full shadow-sm border border-rose-100 italic">
+            Conectado a tu voz mágica guardada
           </p>
         )}
       </div>

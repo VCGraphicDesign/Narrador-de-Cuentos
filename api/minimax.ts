@@ -14,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const MINIMAX_API_KEY = process.env.MINIMAX_API_KEY || "sk-api-rRtqtw786Yo-13yvI62LlfySbFcPBH7i0ckzo2kIREBxOW2f2r8lqKF9JCNuiSLWtHt6t9LxP6Omi8lP1yKYjjSCCM4MrdsdbxsCGLbma7VMSRBmzhJsbnE";
         const MINIMAX_GROUP_ID = process.env.MINIMAX_GROUP_ID || "473267587529936904";
-        const DEFAULT_VOICE_ID = process.env.MINIMAX_VOICE_ID;
+        const DEFAULT_VOICE_ID = process.env.MINIMAX_VOICE_ID || "moss_audio_c9fc4caa-fe5f-11f0-b201-fe4237361ca8";
 
         const targetVoiceId = overrideVoiceId || DEFAULT_VOICE_ID;
 
