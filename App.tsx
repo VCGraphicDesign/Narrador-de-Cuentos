@@ -103,23 +103,34 @@ const VoiceProfileSection: React.FC<{
           !error && <p className="text-rose-400 text-sm font-bold">Graba un saludo corto para que aprenda a hablar como tú.</p>
         )}
 
-        <button
-          onClick={isRecording ? stopRecording : startRecording}
-          disabled={isCreatingProfile && !isRecording}
-          className={`group relative flex items-center justify-center gap-2 px-6 py-2.5 rounded-[1.5rem] text-white font-black transition-all shadow-[0_5px_0_rgb(225,29,72)] active:shadow-none active:translate-y-1 text-base ${isRecording ? 'bg-rose-600 hover:bg-rose-700 shadow-[0_5px_0_rgb(159,18,57)]' : 'bg-rose-400 hover:bg-rose-500'
-            }`}
-        >
-          <img
-            src="/mic.png"
-            className={`w-10 h-10 object-contain transition-transform ${isRecording ? 'scale-125' : 'group-hover:rotate-12'}`}
-            alt="Microfono"
-          />
-          {isRecording ? "¡LISTO!" : profile?.id === 'STORED_VOICE_MODE' ? "MODO VOZ DE LA ABU" : profile ? "REHACER GRABACIÓN" : "GRABAR MI VOZ"}
-        </button>
-        {profile?.id === 'STORED_VOICE_MODE' && (
-          <p className="text-rose-600 text-[10px] font-black uppercase mt-2 bg-white px-3 py-1 rounded-full shadow-sm border border-rose-100 italic">
-            Conectado a tu voz mágica guardada
-          </p>
+        {profile?.id === 'STORED_VOICE_MODE' ? (
+          <div className="flex flex-col items-center">
+            <div className="flex items-center justify-center gap-3 px-8 py-3 rounded-[1.5rem] bg-rose-500 text-white font-black shadow-[0_5px_0_rgb(159,18,57)] scale-105">
+              <img
+                src="/book.png"
+                className="w-10 h-10 object-contain animate-float"
+                alt="Libro Mágico"
+              />
+              <span className="text-lg">VOZ DE LA ABU ACTIVA</span>
+            </div>
+            <p className="text-rose-600 text-[10px] font-black uppercase mt-4 bg-white px-3 py-1 rounded-full shadow-sm border border-rose-100 italic">
+              Conectado a tu voz mágica guardada
+            </p>
+          </div>
+        ) : (
+          <button
+            onClick={isRecording ? stopRecording : startRecording}
+            disabled={isCreatingProfile && !isRecording}
+            className={`group relative flex items-center justify-center gap-2 px-6 py-2.5 rounded-[1.5rem] text-white font-black transition-all shadow-[0_5px_0_rgb(225,29,72)] active:shadow-none active:translate-y-1 text-base ${isRecording ? 'bg-rose-600 hover:bg-rose-700 shadow-[0_5px_0_rgb(159,18,57)]' : 'bg-rose-400 hover:bg-rose-500'
+              }`}
+          >
+            <img
+              src="/mic.png"
+              className={`w-10 h-10 object-contain transition-transform ${isRecording ? 'scale-125' : 'group-hover:rotate-12'}`}
+              alt="Microfono"
+            />
+            {isRecording ? "¡LISTO!" : profile ? "REHACER GRABACIÓN" : "GRABAR MI VOZ"}
+          </button>
         )}
       </div>
     </div>
