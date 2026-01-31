@@ -432,8 +432,8 @@ export default function App() {
         </main>
       </div>
       <footer className="text-center py-16 opacity-80">
-        <p className="text-rose-400 font-black text-lg tracking-[0.4em] animate-pulse">
-          HECHO CON AMOR Y MAGIA
+        <p className="text-rose-400 font-black text-lg tracking-[0.2em] animate-pulse">
+          HECHO CON AMOR DE LA ABU Y LA MAGIA DE LA IA
         </p>
       </footer>
     </div>
