@@ -109,7 +109,11 @@ const VoiceProfileSection: React.FC<{
           className={`group relative flex items-center justify-center gap-2 px-6 py-2.5 rounded-[1.5rem] text-white font-black transition-all shadow-[0_5px_0_rgb(225,29,72)] active:shadow-none active:translate-y-1 text-base ${isRecording ? 'bg-rose-600 hover:bg-rose-700 shadow-[0_5px_0_rgb(159,18,57)]' : 'bg-rose-400 hover:bg-rose-500'
             }`}
         >
-          <span className="text-xl">{isRecording ? "⏹️" : "🎤"}</span>
+          <img
+            src="/mic.png"
+            className={`w-10 h-10 object-contain transition-transform ${isRecording ? 'scale-125' : 'group-hover:rotate-12'}`}
+            alt="Microfono"
+          />
           {isRecording ? "¡LISTO!" : profile ? "REHACER GRABACIÓN" : "GRABAR MI VOZ"}
         </button>
       </div>
@@ -186,16 +190,13 @@ const StoryViewer: React.FC<{ state: StoryState; onSelectKey: () => void }> = ({
         <div className="flex flex-col items-center py-16 gap-10">
           <div className="relative">
             {state.status === 'generating-text' ? (
-              // Libro abriéndose para cuando se escribe el texto
-              <div className="magical-book">
-                <div className="book-base"></div>
-                <div className="book-page"></div>
+              <div className="relative group">
+                <img src="/book.png" className="w-40 h-40 object-contain animate-float" alt="Libro" />
                 <div className="absolute -top-4 -right-4 text-3xl animate-bounce">🖋️</div>
               </div>
             ) : (
-              // Reloj de arena para cuando está en la cola de voz
-              <div className="flex flex-col items-center">
-                <div className="magical-hourglass">⏳</div>
+              <div className="relative group">
+                <img src="/hourglass.png" className="w-32 h-32 object-contain animate-spin-slow" alt="Espera" />
               </div>
             )}
           </div>
@@ -253,13 +254,13 @@ const StoryViewer: React.FC<{ state: StoryState; onSelectKey: () => void }> = ({
               <audio ref={audioRef} onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} onEnded={() => setIsPlaying(false)} className="hidden" />
               <button
                 onClick={togglePlay}
-                className="w-32 h-32 flex items-center justify-center bg-rose-500 text-white rounded-full hover:bg-rose-600 shadow-[0_12px_0_rgb(190,18,60)] active:shadow-none active:translate-y-2 transition-all hover:scale-110 border-4 border-white"
+                className="group relative w-32 h-32 flex items-center justify-center transition-all active:scale-95 shadow-none p-0"
               >
-                {isPlaying ? (
-                  <svg className="h-16 w-16" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
-                ) : (
-                  <svg className="h-16 w-16 ml-3" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                )}
+                <img
+                  src="/play.png"
+                  className={`w-full h-full object-contain ${isPlaying ? 'animate-pulse' : 'hover:scale-110'}`}
+                  alt="Play"
+                />
               </button>
 
               <div className="flex flex-col gap-4 w-full px-8">
@@ -271,10 +272,16 @@ const StoryViewer: React.FC<{ state: StoryState; onSelectKey: () => void }> = ({
                 <a
                   href={`data:${state.audioMimeType || 'audio/mpeg'};base64,${state.audioBase64}`}
                   download={`Cuento-${state.title.replace(/\s+/g, '-')}.mp3`}
-                  className="flex items-center justify-center gap-2 bg-white text-rose-500 font-bold py-3 px-6 rounded-2xl shadow-md hover:bg-rose-50 transition-all active:scale-95 border-2 border-rose-100 mx-auto"
+                  className="group flex flex-col items-center gap-2 transition-all active:scale-95 mx-auto"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                  DESCARGAR AUDIO
+                  <img
+                    src="/download.png"
+                    className="w-24 h-24 object-contain drop-shadow-lg hover:brightness-110 transition-all"
+                    alt="Descargar"
+                  />
+                  <span className="bg-white text-rose-500 font-lexend font-black py-2 px-6 rounded-2xl shadow-md border-2 border-rose-100 uppercase tracking-widest text-xs">
+                    Guardar en Celular
+                  </span>
                 </a>
               </div>
             </div>

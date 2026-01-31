@@ -90,28 +90,54 @@
             }
         }
 
-        /* Reloj de arena mágico */
-        .magical-hourglass {
-            font-size: 3rem;
-            animation: rotate-hourglass 2.5s infinite linear;
-        }
-
-        @keyframes rotate-hourglass {
+        /* Icon Animations */
+        @keyframes float {
             0% {
-                transform: rotate(0deg);
+                transform: translateY(0px) rotate(0deg);
             }
 
-            45% {
-                transform: rotate(0deg);
-            }
-
-            55% {
-                transform: rotate(180deg);
+            50% {
+                transform: translateY(-20px) rotate(5deg);
             }
 
             100% {
-                transform: rotate(180deg);
+                transform: translateY(0px) rotate(0deg);
             }
+        }
+
+        .animate-float {
+            animation: float 3s infinite ease-in-out;
+        }
+
+        @keyframes spin-slow {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .animate-spin-slow {
+            animation: spin-slow 8s infinite linear;
+        }
+
+        /* Fade in for containers */
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fade-in 0.8s ease-out forwards;
         }
     </style>
     <script type="importmap">
