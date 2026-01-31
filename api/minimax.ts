@@ -17,7 +17,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const DEFAULT_VOICE_ID = process.env.MINIMAX_VOICE_ID || process.env.VITE_MINIMAX_VOICE_ID;
 
         if (!MINIMAX_API_KEY) {
-            return res.status(500).json({ error: 'Falta la MINI_MAX_API_KEY en las variables de entorno de Vercel.' });
+            return res.status(500).json({ error: 'Falta la MINI_MAX_API_KEY en Vercel. Por favor, añádela en Settings > Environment Variables.' });
+        }
+
+        if (!MINIMAX_GROUP_ID) {
+            return res.status(500).json({ error: 'Falta el MINI_MAX_GROUP_ID en Vercel. Este número es necesario para que MiniMax acepte tu llave.' });
         }
 
         const targetVoiceId = overrideVoiceId || DEFAULT_VOICE_ID;

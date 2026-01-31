@@ -69,7 +69,10 @@ export async function generateExternalTTS(
       return fishResult;
     } catch (fishError: any) {
       console.error("Fallo crítico en ambos motores:", fishError);
-      throw new Error("Lo sentimos, ambos narradores mágicos están durmiendo o necesitan configuración.");
+      const errorMessage = fishError.message?.includes('Saldo insuficiente')
+        ? "El Pez Mágico (Fish Audio) se quedó sin monedas. ¡Por favor recarga tu saldo!"
+        : "Lo sentimos, ambos narradores mágicos están durmiendo o necesitan configuración técnica en Vercel.";
+      throw new Error(errorMessage);
     }
   }
 }

@@ -60,15 +60,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
 
         if (!response.ok) {
+            if (response.status === 402) {
+                return res.status(402).json({
+                    error: 'Saldo insuficiente en Fish Audio',
+                    message: 'El motor de respaldo (Fish Audio) se ha quedado sin monedas mágicas. Por favor, revisa tu balance en su página.'
+                });
+            }
+
             const errorText = await response.text();
             console.error('Fish Audio Error:', errorText);
 
             // Try to parse as JSON for better error message
             try {
                 const errJson = JSON.parse(errorText);
-                return res.status(500).json({ error: 'Failed to generate TTS from Fish Audio', details: errJson });
+                return res.status(500).json({ error: 'Error en Fish Audio', details: errJson });
             } catch (e) {
-                return res.status(500).json({ error: 'Failed to generate TTS', details: errorText });
+                return res.status(response.status).json({ error: 'Error en Fish Audio', details: errorText });
             }
         }
 
