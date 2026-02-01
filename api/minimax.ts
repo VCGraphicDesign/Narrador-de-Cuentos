@@ -81,7 +81,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 speed: 1.0,
                 vol: 1.0,
                 pitch: 0,
-                emotion: "happy",
             },
             pronunciation_dict: {
                 tone: [],
