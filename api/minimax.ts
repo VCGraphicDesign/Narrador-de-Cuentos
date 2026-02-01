@@ -72,7 +72,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // 3. Generate TTS
         const ttsPayload: any = {
-            model: "speech-01-turbo",
+            model: "speech-01",
             text: text,
             stream: false,
             voice_setting: {
