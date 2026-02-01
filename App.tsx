@@ -205,7 +205,7 @@ const StoryViewer: React.FC<{ state: StoryState; onSelectKey: () => void }> = ({
         <div className="bg-rose-100 text-rose-800 p-8 rounded-[3rem] text-center border-4 border-rose-300 shadow-inner">
           <p className="font-black text-2xl mb-2">¡Algo falló en el bosque!</p>
           <p className="font-bold mb-4">{state.error}</p>
-          <button onClick={onSelectKey} className="bg-rose-600 text-white px-8 py-3 rounded-full font-black shadow-lg">Arreglar Clave</button>
+          <button onClick={onSelectKey} className="bg-rose-600 text-white px-8 py-3 rounded-full font-black shadow-lg">Revisar Configuración</button>
         </div>
       )}
 
@@ -330,9 +330,8 @@ export default function App() {
 
   useEffect(() => {
     const storedMiniMaxVoiceId = (import.meta as any).env?.VITE_MINIMAX_VOICE_ID;
-    const storedFishReferenceId = (import.meta as any).env?.VITE_FISH_AUDIO_REFERENCE_ID;
 
-    if ((storedMiniMaxVoiceId || storedFishReferenceId) && !profile) {
+    if (storedMiniMaxVoiceId && !profile) {
       setProfile({
         id: 'STORED_VOICE_MODE',
         sampleBase64: '', // Not needed for stored mode
