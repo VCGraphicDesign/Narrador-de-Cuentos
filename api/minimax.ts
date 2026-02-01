@@ -12,16 +12,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(400).json({ error: 'Missing text' });
         }
 
-        const MINIMAX_API_KEY = process.env.MINIMAX_API_KEY || process.env.VITE_MINIMAX_API_KEY;
-        const MINIMAX_GROUP_ID = process.env.MINIMAX_GROUP_ID || process.env.VITE_MINIMAX_GROUP_ID;
-        const DEFAULT_VOICE_ID = process.env.MINIMAX_VOICE_ID || process.env.VITE_MINIMAX_VOICE_ID;
+        const MINIMAX_API_KEY = (process.env.MINIMAX_API_KEY || process.env.VITE_MINIMAX_API_KEY || '').trim();
+        const MINIMAX_GROUP_ID = (process.env.MINIMAX_GROUP_ID || process.env.VITE_MINIMAX_GROUP_ID || '').trim();
+        const DEFAULT_VOICE_ID = (process.env.MINIMAX_VOICE_ID || process.env.VITE_MINIMAX_VOICE_ID || '').trim();
 
         if (!MINIMAX_API_KEY) {
-            return res.status(500).json({ error: 'Falta la MINI_MAX_API_KEY en Vercel. Por favor, añádela en Settings > Environment Variables.' });
+            return res.status(500).json({ error: 'Falta la MINIMAX_API_KEY en Vercel. Por favor, añádela en Settings > Environment Variables.' });
         }
 
         if (!MINIMAX_GROUP_ID) {
-            return res.status(500).json({ error: 'Falta el MINI_MAX_GROUP_ID en Vercel. Este número es necesario para que MiniMax acepte tu llave.' });
+            return res.status(500).json({ error: 'Falta el MINIMAX_GROUP_ID en Vercel. Este número es necesario para que MiniMax acepte tu llave.' });
         }
 
         const targetVoiceId = overrideVoiceId || DEFAULT_VOICE_ID;
