@@ -13,8 +13,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(400).json({ error: 'Missing text' });
         }
 
-        const FISH_AUDIO_API_KEY = process.env.FISH_AUDIO_API_KEY || process.env.VITE_FISH_AUDIO_API_KEY;
-        const DEFAULT_REFERENCE_ID = process.env.FISH_AUDIO_REFERENCE_ID || process.env.VITE_FISH_AUDIO_REFERENCE_ID;
+        const FISH_AUDIO_API_KEY = (process.env.FISH_AUDIO_API_KEY || process.env.VITE_FISH_AUDIO_API_KEY || '').trim();
+        const DEFAULT_REFERENCE_ID = (process.env.FISH_AUDIO_REFERENCE_ID || process.env.VITE_FISH_AUDIO_REFERENCE_ID || '').trim();
 
         if (!FISH_AUDIO_API_KEY) {
             return res.status(500).json({ error: 'Falta la FISH_AUDIO_API_KEY en las variables de entorno de Vercel.' });
