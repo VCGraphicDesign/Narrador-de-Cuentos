@@ -10,83 +10,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const MINIMAX_API_KEY = (process.env.MINIMAX_API_KEY || process.env.VITE_MINIMAX_API_KEY || '').trim();
         const MINIMAX_GROUP_ID = (process.env.MINIMAX_GROUP_ID || process.env.VITE_MINIMAX_GROUP_ID || '').trim();
 
-        if (!MINIMAX_API_KEY || !MINIMAX_GROUP_ID) {
-            return res.status(500).json({ error: 'Configuración incompleta en Vercel (API Key o Group ID).' });
-        }
-
+        const targetVoiceId = overrideVoiceId || process.env.VITE_MINIMAX_VOICE_ID;
         let fileId = null;
-        let isCloning = false;
 
-        // Intentar clonación solo si hay audio
-        if (audioBase64 && (!overrideVoiceId || overrideVoiceId === 'MINIMAX_LOCAL')) {
-            isCloning = true;
-            try {
-                const audioBuffer = Buffer.from(audioBase64, 'base64');
-                const formData = new FormData();
-                const blob = new Blob([audioBuffer], { type: 'audio/wav' });
-                formData.append('file', blob, 'voice_sample.wav');
-                formData.append('purpose', 'voice_clone');
+        // Subida de voz para clonación
+        if (!targetVoiceId || targetVoiceId === 'MINIMAX_LOCAL') {
+            if (!audioBase64) return res.status(400).json({ error: 'No audio sample for cloning' });
 
-                const uploadRes = await fetch(`https://api.minimax.io/v1/files/upload?GroupId=${MINIMAX_GROUP_ID}`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${MINIMAX_API_KEY}` },
-                    body: formData,
-                });
+            const formData = new FormData();
+            const blob = new Blob([Buffer.from(audioBase64, 'base64')], { type: 'audio/wav' });
+            formData.append('file', blob, 'voice.wav');
+            formData.append('purpose', 'voice_clone');
 
-                if (uploadRes.ok) {
-                    const uploadData = await uploadRes.json();
-                    fileId = uploadData.file_id;
-                }
-            } catch (e) {
-                console.warn("Fallo en la subida de voz, intentando voz estándar...");
-            }
+            const upRes = await fetch(`https://api.minimax.io/v1/files/upload?GroupId=${MINIMAX_GROUP_ID}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${MINIMAX_API_KEY}` },
+                body: formData
+            });
+            const upData = await upRes.json();
+            fileId = upData.file_id;
         }
 
-        // Configurar Voz Final (Si falla el clon, usamos una voz default de MiniMax)
-        const ttsPayload: any = {
-            model: "speech-01-turbo-240228",
+        // Generación de Audio con el modelo CORRECTO
+        const ttsPayload = {
+            model: "speech-01-turbo", // Este es el nombre exacto que reconoce la API V2
             text: text,
             voice_setting: {
-                voice_id: (fileId) ? "voice_clone" : (overrideVoiceId || "male-qn-01"),
+                voice_id: fileId ? "voice_clone" : (targetVoiceId || "male-qn-01"),
                 speed: 1.0,
                 vol: 1.0,
                 pitch: 0
-            }
+            },
+            voice_clone_file_id: fileId || undefined
         };
 
-        if (fileId) ttsPayload.voice_clone_file_id = fileId;
-
-        const ttsResponse = await fetch(`https://api.minimax.io/v1/t2a_v2?GroupId=${MINIMAX_GROUP_ID}`, {
+        const ttsRes = await fetch(`https://api.minimax.io/v1/t2a_v2?GroupId=${MINIMAX_GROUP_ID}`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${MINIMAX_API_KEY}`,
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify(ttsPayload),
+            body: JSON.stringify(ttsPayload)
         });
 
-        const ttsData = await ttsResponse.json();
+        const ttsData = await ttsRes.json();
 
-        // Si da error de balance, intentamos UNA VEZ MÁS con una voz estándar forzada
-        if (ttsData.base_resp?.status_code === 1007 || ttsData.base_resp?.status_msg?.includes('balance')) {
-            console.log("Sin saldo para clonación, usando voz estándar gratuita...");
-            ttsPayload.voice_setting.voice_id = "male-qn-01";
-            delete ttsPayload.voice_clone_file_id;
-
-            const secondTry = await fetch(`https://api.minimax.io/v1/t2a_v2?GroupId=${MINIMAX_GROUP_ID}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${MINIMAX_API_KEY}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(ttsPayload),
+        if (ttsData.base_resp?.status_code !== 0) {
+            return res.status(500).json({
+                error: ttsData.base_resp?.status_msg || 'Error en MiniMax',
+                code: ttsData.base_resp?.status_code
             });
-            const secondData = await secondTry.json();
-
-            if (secondData.data?.audio) {
-                const buffer = Buffer.from(secondData.data.audio, 'hex');
-                return res.status(200).json({ data: buffer.toString('base64'), mimeType: 'audio/mp3', info: 'Voz estándar (Saldo insuficiente para clon)' });
-            }
         }
 
         if (ttsData.data?.audio) {
@@ -94,7 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ data: buffer.toString('base64'), mimeType: 'audio/mp3' });
         }
 
-        return res.status(500).json({ error: ttsData.base_resp?.status_msg || 'Error desconocido' });
+        return res.status(500).json({ error: 'No se recibió audio', details: ttsData });
 
     } catch (error: any) {
         return res.status(500).json({ error: error.message });
