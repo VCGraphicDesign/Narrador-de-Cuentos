@@ -46,7 +46,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             // 2. Upload voice sample
             const uploadResponse = await fetch(
-                `https://api.minimax.chat/v1/files/upload?GroupId=${MINIMAX_GROUP_ID}`,
+                `https://api.minimax.io/v1/files/upload?GroupId=${MINIMAX_GROUP_ID}`,
                 {
                     method: 'POST',
                     headers: {
@@ -72,7 +72,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // 3. Generate TTS
         const ttsPayload: any = {
-            model: "speech-01-turbo-240228",
+            model: "speech-01-turbo",
             text: text,
             stream: false,
             voice_setting: {
@@ -100,7 +100,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         const ttsResponse = await fetch(
-            `https://api.minimax.chat/v1/t2a_v2?GroupId=${MINIMAX_GROUP_ID}`,
+            `https://api.minimax.io/v1/t2a_v2?GroupId=${MINIMAX_GROUP_ID}`,
             {
                 method: 'POST',
                 headers: {
