@@ -392,41 +392,25 @@ export default function App() {
         throw new Error("Tu voz se está preparando. Por favor, espera unos segundos e intenta de nuevo.");
       }
 
-      // IMPORTANTE: Aquí implementamos el "Splitting" para cuentos largos
-      const { splitTextIntoChunks, concatenateAudioBase64 } = await import('./utils/audioUtils');
+      // Enviamos el cuento completo para evitar errores de sincronización
+      setStory(prev => ({ ...prev, status: 'generating-audio', progress: { current: 1, total: 1 } }));
 
-      // Dividimos el cuento en trozos de ~250 caracteres para XTTS-v2
-      const chunks = splitTextIntoChunks(content, 250);
-      const audioResults: { data: string, mimeType: string }[] = [];
-
-      for (let i = 0; i < chunks.length; i++) {
-        // Actualizamos el estado para mostrar progreso
-        setStory(prev => ({
-          ...prev,
-          progress: { current: i + 1, total: chunks.length }
-        }));
-
-        const partResult = await generateExternalTTS(
-          chunks[i],
-          currentId,
-          profileRef.current?.sampleBase64,
-          profileRef.current?.mimeType,
-          (s) => {
-            setStory(prev => ({
-              ...prev,
-              progress: {
-                current: i + 1,
-                total: chunks.length,
-                queuePosition: s.position
-              }
-            }));
-          }
-        );
-        audioResults.push(partResult);
-      }
-
-      // Unimos todos los audios generados en uno solo de forma fluida
-      const finalAudio = await concatenateAudioBase64(audioResults);
+      const finalAudio = await generateExternalTTS(
+        content,
+        currentId,
+        profileRef.current?.sampleBase64,
+        profileRef.current?.mimeType,
+        (s: any) => {
+          setStory(prev => ({
+            ...prev,
+            progress: {
+              current: 1,
+              total: 1,
+              queuePosition: s.position
+            }
+          }));
+        }
+      );
 
       setStory(prev => ({
         ...prev,
